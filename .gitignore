@@ -40,3 +40,6 @@ npm-debug.log*
 
 # next.js
 next-env.d.ts
+
+public/images
+apps/sw/public/images

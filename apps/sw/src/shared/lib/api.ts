@@ -1,10 +1,11 @@
 import axios from 'axios'
-import { Api } from '@workspace/lib/api'
 
 export type * from '@workspace/lib/api'
 
-export const api = new Api(
-    axios.create({
-        baseURL: 'http://localhost:8080', // TODO: move to env
-    }),
-)
+/**
+ * API client for Summoner's War bestiary
+ * Connects to local Next.js API routes
+ */
+export const api = axios.create({
+    baseURL: '/api', // Next.js API routes
+})

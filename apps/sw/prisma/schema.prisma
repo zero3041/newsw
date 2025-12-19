@@ -1,0 +1,432 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Monster models
+model Monster {
+  id              Int      @id @default(autoincrement())
+  name            String
+  com2usId        Int?     @map("com2us_id") @unique
+  familyId        Int?     @map("family_id")
+  skillGroupId    Int?     @map("skill_group_id")
+  imageFilename   String?  @map("image_filename")
+  element         String   @default("fire")
+  archetype       String   @default("attack")
+  baseStars       Int      @map("base_stars")
+  naturalStars    Int      @map("natural_stars")
+  obtainable       Boolean  @default(true)
+  canAwaken       Boolean  @default(true) @map("can_awaken")
+  isAwakened      Boolean  @default(false) @map("is_awakened")
+  awakenLevel     Int      @default(0) @map("awaken_level")
+  awakenBonus     String?  @map("awaken_bonus")
+  awakensFromId   Int?     @map("awakens_from_id")
+  awakensToId     Int?     @map("awakens_to_id")
+  skillUpsToMax   Int?     @map("skill_ups_to_max")
+  leaderSkillId   Int?     @map("leader_skill_id")
+  
+  // Stats raw values from game data
+  rawHp           Int?     @map("raw_hp")
+  rawAttack       Int?     @map("raw_attack")
+  rawDefense      Int?     @map("raw_defense")
+  
+  // Base stats at base_stars lvl 1
+  baseHp          Int?     @map("base_hp")
+  baseAttack      Int?     @map("base_attack")
+  baseDefense     Int?     @map("base_defense")
+  
+  // Max level stats at 6-star
+  maxLvlHp        Int?     @map("max_lvl_hp")
+  maxLvlAttack    Int?     @map("max_lvl_attack")
+  maxLvlDefense   Int?     @map("max_lvl_defense")
+  
+  // Base stats
+  speed           Int?
+  critRate        Int?     @map("crit_rate")
+  critDamage      Int?     @map("crit_damage")
+  resistance      Int?
+  accuracy        Int?
+  
+  // Awakening materials
+  awakenMatsFireLow       Int @default(0) @map("awaken_mats_fire_low")
+  awakenMatsFireMid       Int @default(0) @map("awaken_mats_fire_mid")
+  awakenMatsFireHigh      Int @default(0) @map("awaken_mats_fire_high")
+  awakenMatsWaterLow      Int @default(0) @map("awaken_mats_water_low")
+  awakenMatsWaterMid      Int @default(0) @map("awaken_mats_water_mid")
+  awakenMatsWaterHigh     Int @default(0) @map("awaken_mats_water_high")
+  awakenMatsWindLow       Int @default(0) @map("awaken_mats_wind_low")
+  awakenMatsWindMid       Int @default(0) @map("awaken_mats_wind_mid")
+  awakenMatsWindHigh      Int @default(0) @map("awaken_mats_wind_high")
+  awakenMatsLightLow      Int @default(0) @map("awaken_mats_light_low")
+  awakenMatsLightMid      Int @default(0) @map("awaken_mats_light_mid")
+  awakenMatsLightHigh     Int @default(0) @map("awaken_mats_light_high")
+  awakenMatsDarkLow       Int @default(0) @map("awaken_mats_dark_low")
+  awakenMatsDarkMid       Int @default(0) @map("awaken_mats_dark_mid")
+  awakenMatsDarkHigh      Int @default(0) @map("awaken_mats_dark_high")
+  awakenMatsMagicLow      Int @default(0) @map("awaken_mats_magic_low")
+  awakenMatsMagicMid      Int @default(0) @map("awaken_mats_magic_mid")
+  awakenMatsMagicHigh     Int @default(0) @map("awaken_mats_magic_high")
+  
+  source          Boolean  @default(false)
+  farmable        Boolean  @default(false)
+  fusionFood      Boolean  @default(false) @map("fusion_food")
+  homunculus      Boolean  @default(false)
+  craftCost       Int?     @map("craft_cost")
+  bestiarySlug    String?  @map("bestiary_slug")
+  
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  awakensFrom     Monster? @relation("AwakenFrom", fields: [awakensFromId], references: [id])
+  awakensTo       Monster? @relation("AwakenTo", fields: [awakensToId], references: [id])
+  leaderSkill     LeaderSkill? @relation(fields: [leaderSkillId], references: [id])
+  
+  // Reverse relations
+  awakeningFrom   Monster[] @relation("AwakenFrom")
+  awakeningTo     Monster[] @relation("AwakenTo")
+  
+      monstersSkills           MonsterSkill[]
+      monsterSources           MonsterSource[]
+      userMonsters             UserMonster[]
+      awakenCostItems          AwakenCost[]
+      craftMaterials           MonsterCraftCost[]
+
+      @@index([com2usId])
+  @@index([familyId])
+  @@index([naturalStars])
+  @@map("monsters")
+}
+
+model MonsterSource {
+  monsterId Int     @map("monster_id")
+  sourceId  Int     @map("source_id")
+  
+  monster   Monster @relation(fields: [monsterId], references: [id])
+  source    Source  @relation(fields: [sourceId], references: [id])
+  
+  @@id([monsterId, sourceId])
+  @@map("monster_sources")
+}
+
+// Skills
+model Skill {
+  id                    Int     @id @default(autoincrement())
+  name                  String
+  description           String?
+  slot                  Int
+  cooltime              Int?
+  hits                  Int
+  passive               Boolean @default(false)
+  aoe                   Boolean @default(false)
+  random                Boolean @default(false)
+  maxLevel              Int     @map("max_level")
+  iconFilename          String? @map("icon_filename")
+  levelProgressDesc     String? @map("level_progress_desc")
+  multiplierFormula      String? @map("multiplier_formula")
+  multiplierFormulaRaw   String? @map("multiplier_formula_raw")
+  com2usId              Int?    @map("com2us_id") @unique
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  monsters              MonsterSkill[]
+  upgrades              SkillUpgrade[]
+  scalingStats          SkillScalingStats[]
+  effectDetails         SkillEffectDetail[]
+  
+  @@map("skills")
+}
+
+model MonsterSkill {
+  monsterId    Int     @map("monster_id")
+  skillId      Int     @map("skill_id")
+  
+  monster      Monster @relation(fields: [monsterId], references: [id])
+  skill        Skill   @relation(fields: [skillId], references: [id])
+  
+  @@id([monsterId, skillId])
+  @@map("monster_skills")
+}
+
+model SkillUpgrade {
+  id        Int    @id @default(autoincrement())
+  skillId   Int    @map("skill_id")
+  effect    String
+  amount    Int
+  
+  skill     Skill  @relation(fields: [skillId], references: [id])
+  
+  @@map("skill_upgrades")
+}
+
+model SkillScalingStats {
+  skillId  Int     @map("skill_id")
+  stat     Int
+  
+  skill    Skill   @relation(fields: [skillId], references: [id])
+  
+  @@id([skillId, stat])
+  @@map("skill_scaling_stats")
+}
+
+model LeaderSkill {
+  id          Int    @id @default(autoincrement())
+  attribute   String
+  amount      Int
+  area        String
+  element     String
+  
+  monsters    Monster[]
+  
+  @@map("leader_skills")
+}
+
+model SkillEffect {
+  id            Int     @id @default(autoincrement())
+  name          String
+  iconFilename  String? @map("icon_filename")
+  description   String?
+  isBuff        Boolean @default(false) @map("is_buff")
+  type          String
+  
+  details       SkillEffectDetail[]
+
+  @@map("skill_effects")
+}
+
+model Source {
+  id              Int     @id @default(autoincrement())
+  name            String
+  description     String?
+  iconFilename    String? @map("icon_filename")
+  farmableSource  Boolean @default(false) @map("farmable_source")
+  metaOrder       Int     @default(0) @map("meta_order")
+
+  monsterSources  MonsterSource[]
+
+  @@map("sources")
+}
+
+model SkillEffectDetail {
+  id              Int          @id @default(autoincrement())
+  skillId         Int          @map("skill_id")
+  effectId        Int          @map("effect_id")
+  aoe             Boolean      @default(false)
+  singleTarget    Boolean      @default(false) @map("single_target")
+  selfEffect      Boolean      @default(false) @map("self_effect")
+  chance          Int?
+  onCrit          Boolean      @default(false) @map("on_crit")
+  onDeath         Boolean      @default(false) @map("on_death")
+  random          Boolean      @default(false)
+  quantity        Int?
+  all             Boolean      @default(false)
+  selfHp          Boolean      @default(false) @map("self_hp")
+  targetHp        Boolean      @default(false) @map("target_hp")
+  damage          Int?
+  note            String?
+  
+  skill           Skill        @relation(fields: [skillId], references: [id])
+  effect          SkillEffect  @relation(fields: [effectId], references: [id])
+  
+  @@map("skill_effect_details")
+}
+
+// Items
+model GameItem {
+  id              Int     @id @default(autoincrement())
+  com2usId        Int?    @unique @map("com2us_id")
+  name            String
+  icon            String?
+  category        Int
+  description     String?
+  sellValue       Int     @map("sell_value")
+  
+  awakenCosts     AwakenCost[]
+  craftCosts      MonsterCraftCost[]
+  
+  @@map("game_items")
+}
+
+model AwakenCost {
+  id          Int       @id @default(autoincrement())
+  monsterId   Int       @map("monster_id")
+  itemId      Int       @map("item_id")
+  quantity    Int       @default(0)
+  
+  monster     Monster   @relation(fields: [monsterId], references: [id])
+  item        GameItem  @relation(fields: [itemId], references: [id])
+  
+  @@map("awaken_costs")
+}
+
+model MonsterCraftCost {
+  id          Int       @id @default(autoincrement())
+  monsterId   Int       @map("monster_id")
+  itemId      Int       @map("item_id")
+  quantity    Int       @default(0)
+  
+  monster     Monster   @relation(fields: [monsterId], references: [id])
+  item        GameItem  @relation(fields: [itemId], references: [id])
+  
+  @@map("monster_craft_costs")
+}
+
+
+// User data models
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String   // Hashed password
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  profiles  UserProfile[]
+  
+  @@map("users")
+}
+
+model UserProfile {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  wizardId      Int?     @map("wizard_id")
+  wizardName    String?  @map("wizard_name")
+  lastImportDate DateTime? @map("last_import_date")
+  importSource  String   @default("") @map("import_source")
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  user          User     @relation(fields: [userId], references: [id])
+  monsters      UserMonster[]
+  runes         UserRune[]
+  artifacts     UserArtifact[]
+  
+  @@map("user_profiles")
+}
+
+model UserMonster {
+  id          Int      @id @default(autoincrement())
+  profileId   Int      @map("profile_id")
+  monsterId   Int      @map("monster_id")
+  level       Int      @default(1)
+  grade       Int      @default(1)
+  awakened    Boolean  @default(false)
+  skillUps    Int      @default(0) @map("skill_ups")
+  locked      Boolean  @default(false)
+  com2usId    String?  @map("com2us_id")
+  
+  // Stats with runes
+  hp          Int      @default(0)
+  attack      Int      @default(0)
+  defense     Int      @default(0)
+  speed       Int      @default(0)
+  critRate    Int      @default(0) @map("crit_rate")
+  critDamage  Int      @default(0) @map("crit_damage")
+  resistance  Int      @default(0)
+  accuracy    Int      @default(0)
+  
+  importDate  DateTime @default(now()) @map("import_date")
+  
+  profile     UserProfile @relation(fields: [profileId], references: [id])
+  monster     Monster    @relation(fields: [monsterId], references: [id])
+  runes       UserRune[]
+  
+  @@unique([profileId, com2usId])
+  @@index([profileId])
+  @@index([monsterId])
+  @@map("user_monsters")
+}
+
+model UserRune {
+  id              Int      @id @default(autoincrement())
+  profileId       Int      @map("profile_id")
+  equippedMonsterId Int?   @map("equipped_monster_id")
+  
+  // Rune properties
+  slot            Int
+  setId           Int      @map("set_id")
+  grade           Int      @default(1)
+  level           Int      @default(0)
+  
+  // Main stat
+  mainStatType    Int      @map("main_stat_type")
+  mainStatValue   Int      @map("main_stat_value")
+  
+  // Innate stat
+  innateStatType  Int?     @map("innate_stat_type")
+  innateStatValue Int?     @map("innate_stat_value")
+  
+  // Substats
+  substat1Type    Int?     @map("substat_1_type")
+  substat1Value   Int?     @map("substat_1_value")
+  substat2Type    Int?     @map("substat_2_type")
+  substat2Value   Int?     @map("substat_2_value")
+  substat3Type    Int?     @map("substat_3_type")
+  substat3Value   Int?     @map("substat_3_value")
+  substat4Type    Int?     @map("substat_4_type")
+  substat4Value   Int?     @map("substat_4_value")
+  
+  // Additional
+  efficiency      Float    @default(0)
+  efficiencyMax   Float    @default(0) @map("efficiency_max")
+  locked          Boolean  @default(false)
+  com2usId        String?  @map("com2us_id")
+  
+  importDate      DateTime @default(now()) @map("import_date")
+  
+  profile         UserProfile @relation(fields: [profileId], references: [id])
+  equippedMonster UserMonster? @relation(fields: [equippedMonsterId], references: [id])
+  
+  @@unique([profileId, com2usId])
+  @@index([profileId])
+  @@map("user_runes")
+}
+
+model UserArtifact {
+  id          Int      @id @default(autoincrement())
+  profileId   Int      @map("profile_id")
+  equippedMonsterId Int? @map("equipped_monster_id")
+  
+  // Artifact properties
+  type        Int      // 1: Attribute, 2: Archetype
+  element     Int?     // For Attribute artifacts
+  archetype   Int?     // For Archetype artifacts
+  grade       Int      @default(1)
+  level       Int      @default(0)
+  
+  // Main stat
+  mainStatType    Int      @map("main_stat_type")
+  mainStatValue   Int      @map("main_stat_value")
+  
+  // Substats
+  substat1Type    Int?     @map("substat_1_type")
+  substat1Value   Int?     @map("substat_1_value")
+  substat2Type    Int?     @map("substat_2_type")
+  substat2Value   Int?     @map("substat_2_value")
+  substat3Type    Int?     @map("substat_3_type")
+  substat3Value   Int?     @map("substat_3_value")
+  substat4Type    Int?     @map("substat_4_type")
+  substat4Value   Int?     @map("substat_4_value")
+  
+  locked      Boolean  @default(false)
+  com2usId    String?  @map("com2us_id")
+  
+  importDate  DateTime @default(now()) @map("import_date")
+  
+  profile     UserProfile @relation(fields: [profileId], references: [id])
+  
+  @@unique([profileId, com2usId])
+  @@index([profileId])
+  @@map("user_artifacts")
+}
